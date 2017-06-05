@@ -126,7 +126,7 @@ void setup() {
   // The extra parameters to be configured (can be either global or just in the setup)
   // After connecting, parameter.getValue() will get you the configured value
   // id/name placeholder/prompt default length
-  WiFiManagerParameter custom_blynk_token("blynk", "blynk token", blynk_token, 33);
+  WiFiManagerParameter custom_blynk_token("blynk", "blynk token", blynk_token, 34);
 
   //WiFiManager
   //Local intialization. Once its business is done, there is no need to keep it around
@@ -143,7 +143,7 @@ void setup() {
   wifiManager.addParameter(&custom_blynk_token);
 
   //reset settings - for testing
-  //wifiManager.resetSettings();
+  wifiManager.resetSettings();
 
   //set minimu quality of signal so it ignores AP's under that quality
   //defaults to 8%
@@ -152,7 +152,7 @@ void setup() {
   //sets timeout until configuration portal gets turned off
   //useful to make it all retry or go to sleep
   //in seconds
-  //wifiManager.setTimeout(120);
+  wifiManager.setTimeout(120);
 
   //fetches ssid and pass and tries to connect
   //if it does not connect it starts an access point with the specified name

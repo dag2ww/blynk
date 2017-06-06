@@ -45,6 +45,8 @@ Ticker ticker;
 // Example to initialize DHT sensor for Arduino Due:
 DHT dht(DHTPIN, DHTTYPE);
 
+int dhtReadErrorCount = 0;
+
 char blynk_token[34] = "22c39700a6ef43ab9abd0a1eabfa5049";
 
 //flag for saving data
@@ -143,7 +145,7 @@ void setup() {
   wifiManager.addParameter(&custom_blynk_token);
 
   //reset settings - for testing
-  wifiManager.resetSettings();
+  //wifiManager.resetSettings();
 
   //set minimu quality of signal so it ignores AP's under that quality
   //defaults to 8%
@@ -222,11 +224,17 @@ void blynkPush()
   //h = ((int) (h * 10) / 10.0);
   if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
+    dhtReadErrorCount += 1;
+    if(dhtReadErrorCount >= 10) {
+      Blynk.virtualWrite(V1, -127);
+      Blynk.virtualWrite(V2, -127);
+      dhtReadErrorCount = 0;     
+    }    
   } else {
-      Serial.println("Temp: "+String(t)+" Humidity: "+String(h)+".");
+    Blynk.virtualWrite(V1, t);
+    Blynk.virtualWrite(V2, h);    
+    Serial.println("Temp: "+String(t)+" Humidity: "+String(h)+".");
   }
-  Blynk.virtualWrite(V1, t);
-  Blynk.virtualWrite(V2, h);
   tickLed();
 }
 

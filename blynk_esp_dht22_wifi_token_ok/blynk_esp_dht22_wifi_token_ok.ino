@@ -205,7 +205,7 @@ void setup() {
   Blynk.config(blynk_token);
   Blynk.connect();
 
-  blynkTimer.setInterval(2100L, blynkPush);
+  blynkTimer.setInterval(2500L, blynkPush);
 
 }
 // This function will run every time Blynk connection is established

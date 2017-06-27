@@ -22,7 +22,7 @@ Ticker ticker;
 #define BLYNK_DEBUG           // Comment this out to disable debug and save space
 #define BLYNK_PRINT Serial    // Comment this out to disable prints and save space
 
-#define DHTPIN D2
+#define DHTPIN D3
 
 
 // Uncomment whatever type you're using!
@@ -49,6 +49,8 @@ Ticker ticker;
 DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
 
+boolean bmpPresent = false;
+
 int dhtReadErrorCount = 0;
 
 char blynk_token[34] = "22c39700a6ef43ab9abd0a1eabfa50xx";
@@ -66,6 +68,8 @@ void saveConfigCallback () {
 #include <BlynkSimpleEsp8266.h>
 #include <SimpleTimer.h>
 SimpleTimer timer;
+
+int ticksToRestart = 60;
 
 BlynkTimer blynkTimer; // Create a Timer object called "timer"! 
 
@@ -206,10 +210,13 @@ void setup() {
 
   dht.begin();
 
-  Wire.pins(D3, D4);
-  Wire.begin(D3, D4);
+  //SDA, SCL
+  Wire.pins(D1, D2);
+  Wire.begin(D1, D2);
   if (!bmp.begin()) {
     Serial.println("No BMP180 / BMP085 found");
+  } else {
+    bmpPresent = true;
   }
   
   Blynk.config(blynk_token);
@@ -220,12 +227,21 @@ void setup() {
 }
 // This function will run every time Blynk connection is established
 BLYNK_CONNECTED() {
+    ticksToRestart = 60;
     // Request Blynk server to re-send latest values for all pins
     Blynk.syncAll();
 }
 
 void blynkPush()
 {
+  if(!Blynk.connected()){
+    --ticksToRestart;
+  }
+  
+  if(ticksToRestart <=0){
+    ESP.restart();
+  }
+  
   float h = dht.readHumidity();
   // Read temperature as Celsius
   float t = dht.readTemperature();
@@ -242,15 +258,38 @@ void blynkPush()
     }    
   } else {
     Blynk.virtualWrite(V1, t);
-    Blynk.virtualWrite(V2, h);  
+    Blynk.virtualWrite(V2, h); 
+    double dp = dewPoint(t,h);
+    Blynk.virtualWrite(V4, dp); 
     dhtReadErrorCount = 0;  
     Serial.println("Temp: "+String(t)+" Humidity: "+String(h)+".");
   }
 
-  Serial.println("Pressure: "+String(bmp.readPressure()));
-  Blynk.virtualWrite(V3, h);
-      
+  if(bmpPresent) {
+    float p = bmp.readPressure()/100;
+    Serial.println("Pressure: " + String(p));
+    Blynk.virtualWrite(V3, p);
+  } 
+  
   tickLed();
+}
+
+double dewPoint(double celsius, double humidity)
+{
+  // (1) Saturation Vapor Pressure = ESGG(T)
+  double RATIO = 373.15 / (273.15 + celsius);
+  double RHS = -7.90298 * (RATIO - 1);
+  RHS += 5.02808 * log10(RATIO);
+  RHS += -1.3816e-7 * (pow(10, (11.344 * (1 - 1/RATIO ))) - 1) ;
+  RHS += 8.1328e-3 * (pow(10, (-3.49149 * (RATIO - 1))) - 1) ;
+  RHS += log10(1013.246);
+
+        // factor -3 is to adjust units - Vapor Pressure SVP * humidity
+  double VP = pow(10, RHS - 3) * humidity;
+
+        // (2) DEWPOINT = F(Vapor Pressure)
+  double T = log(VP/0.61078);   // temp var
+  return (241.88 * T) / (17.558 - T);
 }
   
   void loop()

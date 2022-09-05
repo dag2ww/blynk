@@ -1,6 +1,13 @@
-#include <FS.h>                   //this needs to be first, or it all crashes and burns...
+#define BLYNK_TEMPLATE_ID           "TMPLkKyTLayd"
+#define BLYNK_DEVICE_NAME           "Quickstart Device"
+#define BLYNK_AUTH_TOKEN            "VJHPEQWs2Djg8KRN8mUNHUX46wx5n9NT"
+
+
+#include "LittleFS.h"                  //this needs to be first, or it all crashes and burns...
+// see https://arduino-esp8266.readthedocs.io/en/latest/filesystem.html
 
 #include <ESP8266WiFi.h>          //https://github.com/esp8266/Arduino
+#include <BlynkSimpleEsp8266.h>
 
 //needed for library
 #include <DNSServer.h>
@@ -9,7 +16,6 @@
 
 //for LED status
 #include <Ticker.h>
-Ticker ticker;
 
 #include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
 
@@ -24,6 +30,7 @@ Ticker ticker;
 
 #define DHTPIN D3
 
+Ticker ticker;
 
 // Uncomment whatever type you're using!
 //#define DHTTYPE DHT11   // DHT 11 
@@ -64,10 +71,7 @@ void saveConfigCallback () {
   shouldSaveConfig = true;
 }
 
-
-#include <BlynkSimpleEsp8266.h>
-#include <SimpleTimer.h>
-SimpleTimer timer;
+BlynkTimer timer;
 
 int ticksToRestart = 60;
 
@@ -113,16 +117,16 @@ void setup() {
         std::unique_ptr<char[]> buf(new char[size]);
 
         configFile.readBytes(buf.get(), size);
-        DynamicJsonBuffer jsonBuffer;
-        JsonObject& json = jsonBuffer.parseObject(buf.get());
-        json.printTo(Serial);
-        if (json.success()) {
+        DynamicJsonDocument jsonBuffer(2048);
+        auto error = deserializeJson(jsonBuffer, buf.get());
+  
+        //json.printTo(Serial);
+        if (error) {
+          Serial.println("failed to load json config");
+        } else {
           Serial.println("\nparsed json");
 
-          strcpy(blynk_token, json["blynk_token"]);
-
-        } else {
-          Serial.println("failed to load json config");
+          strcpy(blynk_token, jsonBuffer["blynk_token"]);      
         }
       }
     }
@@ -189,18 +193,17 @@ void setup() {
   //save the custom parameters to FS
   if (shouldSaveConfig) {
     Serial.println("saving config");
-    DynamicJsonBuffer jsonBuffer;
-    JsonObject& json = jsonBuffer.createObject();
+    DynamicJsonDocument jsonBuffer(2048);
 
-    json["blynk_token"] = blynk_token;
+    jsonBuffer["blynk_token"] = blynk_token;
 
     File configFile = SPIFFS.open("/config.json", "w");
     if (!configFile) {
       Serial.println("failed to open config file for writing");
     }
 
-    json.printTo(Serial);
-    json.printTo(configFile);
+    //serializeJson(jsonBuffer, Serial);
+    serializeJson(jsonBuffer, configFile);
     configFile.close();
     //end save
   }
@@ -225,8 +228,8 @@ void setup() {
   blynkTimer.setInterval(2500L, blynkPush);
 
 }
-// This function will run every time Blynk connection is established
-BLYNK_CONNECTED() {
+//// This function will run every time Blynk connection is established
+void BlynkOnConnected() {
     ticksToRestart = 60;
     // Request Blynk server to re-send latest values for all pins
     Blynk.syncAll();

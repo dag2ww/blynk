@@ -1,6 +1,6 @@
 #define BLYNK_TEMPLATE_ID "TMPLyiiIu_zF"
 #define BLYNK_DEVICE_NAME "Klimat Info Ogród"
-#define BLYNK_FIRMWARE_VERSION        "0.1.2"
+#define BLYNK_FIRMWARE_VERSION        "0.1.3"
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 #define APP_DEBUG
@@ -15,7 +15,7 @@
 #include "BlynkEdgent.h"
 
 //for LED status
-#include <Ticker.h>
+//#include <Ticker.h>
 
 #include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
 
@@ -28,7 +28,7 @@
 
 #define DHTPIN D3
 
-Ticker ticker;
+//Ticker ticker;
 
 // Uncomment whatever type you're using!
 //#define DHTTYPE DHT11   // DHT 11 
@@ -79,19 +79,8 @@ void setup() {
   Serial.begin(115200);
   Serial.println();
   Serial.println("Starting...");    //read configuration from FS json
-
-  //set led pin as output
-  pinMode(BUILTIN_LED, OUTPUT);
   
   BlynkEdgent.begin();
-  
-    // start ticker with 0.5 because we start in AP mode and try to connect
-  ticker.attach(0.1, tickLed);
- 
-  ticker.detach();
-  //turn LED off
-  digitalWrite(BUILTIN_LED, HIGH);
-  //read updated parameters
 
   Serial.println("local ip");
   Serial.println(WiFi.localIP());
@@ -103,12 +92,10 @@ void setup() {
   Wire.begin(D1, D2);
   if (!bmp.begin()) {
     Serial.println("No BMP180 / BMP085 found");
+    Blynk.logEvent("no_bmp_sensor");
   } else {
     bmpPresent = true;
   }
-  
-  //Blynk.config(blynk_token);
-  //Blynk.connect();
 
   blynkTimer.setInterval(2500L, blynkPush);
 
@@ -138,6 +125,8 @@ void blynkPush()
   //h = ((int) (h * 10) / 10.0);
   if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
+        Blynk.logEvent("no_dht22_sensor");
+    
     dhtReadErrorCount += 1;
     if(dhtReadErrorCount >= 10) {
       Blynk.virtualWrite(V1, -127);
@@ -158,8 +147,7 @@ void blynkPush()
     Serial.println("Pressure: " + String(p));
     Blynk.virtualWrite(V3, p);
   } 
-  
-  tickLed();
+
 }
 
 double dewPoint(double celsius, double humidity)

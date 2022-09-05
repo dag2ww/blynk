@@ -1,6 +1,6 @@
 #define BLYNK_TEMPLATE_ID "TMPLyiiIu_zF"
 #define BLYNK_DEVICE_NAME "Klimat Info"
-#define BLYNK_FIRMWARE_VERSION        "0.1.4"
+#define BLYNK_FIRMWARE_VERSION        "0.1.5"
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 #define APP_DEBUG

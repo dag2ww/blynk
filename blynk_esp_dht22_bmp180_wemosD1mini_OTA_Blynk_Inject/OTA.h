@@ -10,7 +10,7 @@ extern BlynkTimer edgentTimer;
 BLYNK_WRITE(InternalPinOTA) {
   overTheAirURL = param.asString();
 
-  edgentTimer.setTimeout(2000L, [](){
+  edgentTimer.setTimeout(5000L, [](){
     // Start OTA
     Blynk.logEvent("sys_ota", "OTA started");
 
@@ -161,7 +161,7 @@ void enterOTA() {
 
   uint32_t timeout = millis();
   while (client->connected() && !client->available()) {
-    if (millis() - timeout > 10000L) {
+    if (millis() - timeout > 50000L) {
       OTA_FATAL("Response timeout");
     }
     delay(10);

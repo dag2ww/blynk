@@ -1,6 +1,6 @@
 #define BLYNK_TEMPLATE_ID "TMPLyiiIu_zF"
-#define BLYNK_DEVICE_NAME "Klimat Info Ogród"
-#define BLYNK_FIRMWARE_VERSION        "0.1.3"
+#define BLYNK_DEVICE_NAME "Klimat Info"
+#define BLYNK_FIRMWARE_VERSION        "0.1.4"
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 #define APP_DEBUG
@@ -125,7 +125,7 @@ void blynkPush()
   //h = ((int) (h * 10) / 10.0);
   if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
-        Blynk.logEvent("no_dht22_sensor");
+        Blynk.logEvent("no_dht_sensor");
     
     dhtReadErrorCount += 1;
     if(dhtReadErrorCount >= 10) {

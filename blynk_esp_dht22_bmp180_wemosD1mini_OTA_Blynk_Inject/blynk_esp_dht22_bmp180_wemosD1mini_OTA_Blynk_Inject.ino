@@ -1,6 +1,6 @@
 #define BLYNK_TEMPLATE_ID "TMPLyiiIu_zF"
 #define BLYNK_DEVICE_NAME "Klimat Info"
-#define BLYNK_FIRMWARE_VERSION        "0.1.5"
+#define BLYNK_FIRMWARE_VERSION        "0.1.7"
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 #define APP_DEBUG
@@ -55,7 +55,7 @@ DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
 
 boolean bmpPresent = false;
-
+boolean noDhtReported = false;
 int dhtReadErrorCount = 0;
 
 
@@ -125,7 +125,10 @@ void blynkPush()
   //h = ((int) (h * 10) / 10.0);
   if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
-        Blynk.logEvent("no_dht_sensor");
+    if(!noDhtReported) {
+      Blynk.logEvent("no_dht_sensor");
+      noDhtReported = true;
+    }
     
     dhtReadErrorCount += 1;
     if(dhtReadErrorCount >= 10) {

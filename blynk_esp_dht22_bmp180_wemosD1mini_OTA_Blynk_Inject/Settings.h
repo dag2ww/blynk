@@ -5,10 +5,10 @@
 
 #if defined(USE_NODE_MCU_BOARD) || defined(USE_WEMOS_D1_MINI)
 
-  #define BOARD_BUTTON_PIN            0
+  #define BOARD_BUTTON_PIN            2
   #define BOARD_BUTTON_ACTIVE_LOW     true
 
-  #define BOARD_LED_PIN               2
+  #define BOARD_LED_PIN               15
   #define BOARD_LED_INVERSE           true
   #define BOARD_LED_BRIGHTNESS        255
 

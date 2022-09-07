@@ -57,7 +57,9 @@ Adafruit_BMP085 bmp;
 boolean bmpPresent = false;
 boolean noDhtReported = false;
 int dhtReadErrorCount = 0;
-
+boolean pracaCWUSwitch = false;
+boolean pracaCWUFeedback = false;
+double temperaturaCWU = 0.0;
 
 BlynkTimer timer;
 
@@ -177,4 +179,17 @@ double dewPoint(double celsius, double humidity)
   blynkTimer.run();
   timer.run(); // Initiates SimpleTimer  
   BlynkEdgent.run();
+}
+
+BLYNK_WRITE(V5)
+{
+    Blynk.virtualWrite(V5, temperaturaCWU);
+}
+BLYNK_WRITE(V6)
+{
+    pracaCWUSwitch = param.asInt();
+}
+BLYNK_WRITE(V7)
+{
+    Blynk.virtualWrite(V7, pracaCWUFeedback);
 }

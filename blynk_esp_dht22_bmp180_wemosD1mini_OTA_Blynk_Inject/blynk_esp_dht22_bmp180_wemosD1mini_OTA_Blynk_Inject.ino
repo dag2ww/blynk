@@ -1,6 +1,6 @@
 #define BLYNK_TEMPLATE_ID "TMPLyiiIu_zF"
 #define BLYNK_DEVICE_NAME "Klimat Info"
-#define BLYNK_FIRMWARE_VERSION        "0.2.5"
+#define BLYNK_FIRMWARE_VERSION        "0.2.6"
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 #define APP_DEBUG
@@ -15,14 +15,14 @@
 #include "BlynkEdgent.h"
 
 //######### ESP NOW COMMS ############
-//#include<ESP8266WiFi.h>
+#include<ESP8266WiFi.h>
 #include<espnow.h>
 
 #define MY_ROLE         ESP_NOW_ROLE_COMBO              // set the role of this device: CONTROLLER, SLAVE, COMBO
 #define RECEIVER_ROLE   ESP_NOW_ROLE_COMBO              // set the role of the receiver
 #define WIFI_CHANNEL    11
 
-#define MY_NAME         "GATE_NODE" //BC:DD:C2:24:BB:47
+#define MY_NAME         "GATE_NODE" 
 
 uint8_t receiverAddress[] = {0xBC, 0xDD, 0xC2, 0x24, 0xBB, 0x47};   // SENSOR MAC
 //broadcast
@@ -167,7 +167,9 @@ void setup() {
   blynkTimer.setInterval(2500L, blynkPush);
 
   timer.setInterval(1000L, tickLed);
-
+  WiFi.mode(WIFI_AP_STA);
+  //WiFi.esp_wifi_set_ps(WIFI_PS_NONE);
+  
   if(esp_now_init() != 0) {
     Serial.println("ESP-NOW initialization failed");
     return;

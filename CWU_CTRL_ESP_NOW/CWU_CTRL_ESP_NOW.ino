@@ -33,12 +33,9 @@
 #define RECEIVER_ROLE   ESP_NOW_ROLE_COMBO              // set the role of the receiver
 #define WIFI_CHANNEL    11
 
-#define MY_NAME         "SENSOR NODE"
-//uint8_t receiverAddress[] = {0xBC, 0xDD, 0xC2, 0xBA, 0xFA, 0xB1};     // PC MAC
-uint8_t receiverAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};     // GATE MAC
+#define MY_NAME         "SENSOR_NODE"
 
-//#define MY_NAME         "GATE NODE"
-//uint8_t receiverAddress[] = {0xBC, 0xDD, 0xC2, 0xBA, 0xFC, 0x76};   // SENSOR MAC
+uint8_t receiverAddress[] = {0x60, 0x01, 0x94, 0x1D, 0x4A, 0x61};     // GATE MAC 60:01:94:1D:4A:61
 
 struct __attribute__((packed)) dataPacket {
   int sensor1;

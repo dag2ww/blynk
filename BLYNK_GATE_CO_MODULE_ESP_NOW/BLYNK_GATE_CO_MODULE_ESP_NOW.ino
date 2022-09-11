@@ -28,12 +28,17 @@
  *********************************************************************************************************************/
 #include<ESP8266WiFi.h>
 #include<espnow.h>
+#include <CommandParser.h>
 
 #define MY_ROLE         ESP_NOW_ROLE_COMBO              // set the role of this device: CONTROLLER, SLAVE, COMBO
 #define RECEIVER_ROLE   ESP_NOW_ROLE_COMBO              // set the role of the receiver
 #define WIFI_CHANNEL    1
 
 #define MY_NAME         "ESP_GATE_CO_NODE"
+
+typedef CommandParser<> MyCommandParser;
+bool cwu_pom_on = false;
+MyCommandParser parser;
 
 //D1 MINI CWU CTRL MAC:        {0xBC, 0xDD, 0xC2, 0x24, 0xBB, 0x47};  
 //D1 MINI PRO GATE CO-MOD MAC: 60:01:94:1C:29:FD
@@ -73,10 +78,15 @@ void dataReceived(uint8_t *senderMac, uint8_t *data, uint8_t dataLength) {
   
   memcpy(&packet, data, sizeof(packet));
 
-  //TODO send it via Serial1 to BLYNK_GATE
   Serial.print("cwu_pomp_is_running_feedback: ");
   Serial.println(packet.cwu_pomp_is_running_feedback);
   Serial.print("cwu_temperature: ");
+  Serial.println(packet.cwu_temperature);
+
+  Serial.print("|CMD|--CWU_RUN_STATE ");
+  Serial.println(packet.cwu_pomp_is_running_feedback);
+
+  Serial.print("|CMD|--CWU_TEMPERATURE ");
   Serial.println(packet.cwu_temperature);
 }
  
@@ -87,6 +97,8 @@ void setup() {
   Serial.println("MAC ADDRESS:");
   Serial.println(WiFi.macAddress());
   Serial.println();
+
+  parser.registerCommand("|CMD|--CWU_ON", "i", &cmd_cwu_on_process);
     
   Serial.print(MY_NAME);
   Serial.println("...initializing...");
@@ -108,12 +120,27 @@ void setup() {
 }
 
 void loop() {
-  sendDataPacket packet;
+  sendDataPacket packet;  
 
-  //TODO get it from Serial1
-  packet.cwu_pomp_on = true;
+  if (Serial.available()) {
+    char line[128];
+    size_t lineLength = Serial.readBytesUntil('\n', line, 127);
+    line[lineLength] = '\0';
+
+    char response[MyCommandParser::MAX_RESPONSE_SIZE];
+    parser.processCommand(line, response);
+    Serial.println(response);
+  }
+
+  packet.cwu_pomp_on = cwu_pom_on;
 
   esp_now_send(receiverAddress, (uint8_t *) &packet, sizeof(packet));
 
   delay(1000);
+}
+
+void cmd_cwu_on_process(MyCommandParser::Argument *args, char *response) {
+  Serial.print("setting cwu_pomp_on to: "); Serial.println(args[0].asInt64);
+  cwu_pom_on = args[0].asInt64;
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }

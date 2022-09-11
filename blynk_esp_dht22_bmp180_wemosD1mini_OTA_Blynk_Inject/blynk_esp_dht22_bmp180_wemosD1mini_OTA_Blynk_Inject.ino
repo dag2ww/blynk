@@ -19,6 +19,8 @@
 #include <Wire.h>
 #include <Adafruit_BMP085.h>      //http://www.instructables.com/id/Adding-the-BMP180-to-the-ESP8266/
 
+#include <CommandParser.h>
+typedef CommandParser<> MyCommandParser;
 
 #define DHTPIN D3
 
@@ -26,6 +28,8 @@
 
 DHT dht(DHTPIN, DHTTYPE);
 Adafruit_BMP085 bmp;
+
+MyCommandParser parser;
 
 boolean bmpPresent = false;
 boolean noDhtReported = false;
@@ -49,6 +53,10 @@ void setup() {
 
   Serial.println("MAC ADDRESS:");
   Serial.println(WiFi.macAddress());
+
+  parser.registerCommand("|CMD|--CWU_RUN_STATE", "i", &cmd_cwu_on_feedback_process);
+  parser.registerCommand("|CMD|--CWU_TEMPERATURE", "d", &cmd_cwu_temp_process);
+    
   
   BlynkEdgent.begin();
   Blynk.logEvent("started_info");
@@ -147,6 +155,30 @@ double dewPoint(double celsius, double humidity)
 {
   blynkTimer.run();
   BlynkEdgent.run();
+
+  
+  if (Serial.available()) {
+    char line[128];
+    size_t lineLength = Serial.readBytesUntil('\n', line, 127);
+    line[lineLength] = '\0';
+
+    char response[MyCommandParser::MAX_RESPONSE_SIZE];
+    parser.processCommand(line, response);
+    Serial.println(response);
+  }
+  
+}
+
+void cmd_cwu_on_feedback_process(MyCommandParser::Argument *args, char *response) {
+  Serial.print("setting cwu_pomp_on to: "); Serial.println(args[0].asInt64);
+  pracaCWUFeedback = args[0].asInt64;
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
+}
+
+void cmd_cwu_temp_process(MyCommandParser::Argument *args, char *response) {
+  Serial.print("setting cwu_pomp_on to: "); Serial.println(args[0].asDouble);
+  temperaturaCWU = args[0].asDouble;
+  strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
 
 BLYNK_WRITE(V5)
@@ -156,6 +188,8 @@ BLYNK_WRITE(V5)
 BLYNK_WRITE(V6)
 {
     pracaCWUSwitch = param.asInt();
+    Serial.print("|CMD|--CWU_ON ");
+    Serial.println(pracaCWUSwitch);
 }
 BLYNK_WRITE(V7)
 {

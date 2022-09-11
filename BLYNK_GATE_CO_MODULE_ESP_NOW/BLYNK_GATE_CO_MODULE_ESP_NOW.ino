@@ -33,23 +33,22 @@
 #define RECEIVER_ROLE   ESP_NOW_ROLE_COMBO              // set the role of the receiver
 #define WIFI_CHANNEL    1
 
-//#define MY_NAME         "GATE_NODE"
-#define MY_NAME         "CWU_CTRL_NODE"
+#define MY_NAME         "ESP_GATE_CO_NODE"
 
 //D1 MINI CWU CTRL MAC:        {0xBC, 0xDD, 0xC2, 0x24, 0xBB, 0x47};  
 //D1 MINI PRO GATE CO-MOD MAC: 60:01:94:1C:29:FD
 //D1 MINI GATE MAC:            60:01:94:1D:4A:61
 
-//uint8_t receiverAddress[] = {0x60, 0x01, 0x94, 0x1C, 0x29, 0xFD}; //D1 MINI PRO GATE CO-MOD  
+//uint8_t receiverAddress[] = {0xBC, 0xDD, 0xC2, 0x24, 0xBB, 0x47}; //D1 MINI CWU CTRL 
 //Just broadcast
-uint8_t receiverAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; //D1 MINI PRO GATE CO-MOD 
+uint8_t receiverAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; //D1 MINI CWU CTRL 
 
-struct __attribute__((packed)) sendDataPacket {
+struct __attribute__((packed)) recDataPacket {
   bool cwu_pomp_is_running_feedback;
   float cwu_temperature;
 };
 
-struct __attribute__((packed)) recDataPacket {
+struct __attribute__((packed)) sendDataPacket {
   bool cwu_pomp_on;
 };
 
@@ -73,16 +72,17 @@ void dataReceived(uint8_t *senderMac, uint8_t *data, uint8_t dataLength) {
   Serial.println(macStr);
   
   memcpy(&packet, data, sizeof(packet));
-  
-  Serial.print("cwu_pomp_on: ");
-  Serial.println(packet.cwu_pomp_on);
+
+  //TODO send it via Serial1 to BLYNK_GATE
+  Serial.print("cwu_pomp_is_running_feedback: ");
+  Serial.println(packet.cwu_pomp_is_running_feedback);
+  Serial.print("cwu_temperature: ");
+  Serial.println(packet.cwu_temperature);
 }
  
 void setup() {
   Serial.begin(115200);     // initialize serial port
 
-  Serial.println();
-  Serial.println();
   Serial.println();
   Serial.println("MAC ADDRESS:");
   Serial.println(WiFi.macAddress());
@@ -109,9 +109,9 @@ void setup() {
 
 void loop() {
   sendDataPacket packet;
-  //TODO read pomp pin and temp stats
-  packet.cwu_pomp_is_running_feedback = true;
-  packet.cwu_temperature = 6.28;
+
+  //TODO get it from Serial1
+  packet.cwu_pomp_on = true;
 
   esp_now_send(receiverAddress, (uint8_t *) &packet, sizeof(packet));
 

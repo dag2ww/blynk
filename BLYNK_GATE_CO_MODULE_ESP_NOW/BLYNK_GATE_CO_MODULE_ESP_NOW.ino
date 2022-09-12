@@ -36,7 +36,8 @@
 
 #define MY_NAME         "ESP_GATE_CO_NODE"
 
-typedef CommandParser<> MyCommandParser;
+//see https://github.com/Uberi/Arduino-CommandParser
+typedef CommandParser<16, 4, 30, 32, 64> MyCommandParser;
 bool cwu_pom_on = false;
 MyCommandParser parser;
 
@@ -59,10 +60,9 @@ struct __attribute__((packed)) sendDataPacket {
 
 void transmissionComplete(uint8_t *receiver_mac, uint8_t transmissionStatus) {
   if(transmissionStatus == 0) {
-    Serial.println("Data sent successfully");
+    Serial.println("Data to SENSOR(s) sent successfully");
   } else {
-    Serial.print("Error code: ");
-    Serial.println(transmissionStatus);
+    Serial.println(String("Sending data to SENSOR(s) failed with error code: ")+transmissionStatus);
   }
 }
 
@@ -73,21 +73,17 @@ void dataReceived(uint8_t *senderMac, uint8_t *data, uint8_t dataLength) {
   snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x", senderMac[0], senderMac[1], senderMac[2], senderMac[3], senderMac[4], senderMac[5]);
 
   Serial.println();
-  Serial.print("Received data from: ");
-  Serial.println(macStr);
+  Serial.println(String("Received data from: ")+macStr);
   
   memcpy(&packet, data, sizeof(packet));
 
-  Serial.print("cwu_pomp_is_running_feedback: ");
-  Serial.println(packet.cwu_pomp_is_running_feedback);
-  Serial.print("cwu_temperature: ");
-  Serial.println(packet.cwu_temperature);
+  Serial.println(String("cwu_pomp_is_running_feedback: ")+packet.cwu_pomp_is_running_feedback);
+  Serial.println(String("cwu_temperature: ")+packet.cwu_temperature);
 
-  Serial.print("|CMD|--CWU_RUN_STATE ");
-  Serial.println(packet.cwu_pomp_is_running_feedback);
 
-  Serial.print("|CMD|--CWU_TEMPERATURE ");
-  Serial.println(packet.cwu_temperature);
+  Serial.println(String("|CMD|--CWU_RUN_STATE ")+packet.cwu_pomp_is_running_feedback);
+  Serial.println(String("|CMD|--CWU_TEMPERATURE ")+packet.cwu_temperature);
+
 }
  
 void setup() {
@@ -100,8 +96,7 @@ void setup() {
 
   parser.registerCommand("|CMD|--CWU_ON", "i", &cmd_cwu_on_process);
     
-  Serial.print(MY_NAME);
-  Serial.println("...initializing...");
+  Serial.println(String(MY_NAME)+"...initializing...");
 
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();        // we do not want to connect to a WiFi network
@@ -116,7 +111,7 @@ void setup() {
   esp_now_register_recv_cb(dataReceived);               // this function will get called whenever we receive data
   esp_now_add_peer(receiverAddress, RECEIVER_ROLE, WIFI_CHANNEL, NULL, 0);
 
-  Serial.println("Initialized.");
+  Serial.println("ESP-NOW comms Initialized.");
 }
 
 void loop() {
@@ -125,11 +120,17 @@ void loop() {
   if (Serial.available()) {
     char line[128];
     size_t lineLength = Serial.readBytesUntil('\n', line, 127);
-    line[lineLength] = '\0';
-
-    char response[MyCommandParser::MAX_RESPONSE_SIZE];
-    parser.processCommand(line, response);
-    Serial.println(response);
+    if(lineLength > 0){
+      line[lineLength-1] = '\0'; //to get rid of \r sent before \n
+    } else {
+      line[lineLength] = '\0';
+    }
+    if(line[0] == '|'){
+      char response[MyCommandParser::MAX_RESPONSE_SIZE];
+      Serial.println(String("Got and will process:")+line);
+      parser.processCommand(line, response);
+      Serial.println(response);
+    }
   }
 
   packet.cwu_pomp_on = cwu_pom_on;
@@ -140,7 +141,7 @@ void loop() {
 }
 
 void cmd_cwu_on_process(MyCommandParser::Argument *args, char *response) {
-  Serial.print("setting cwu_pomp_on to: "); Serial.println(args[0].asInt64);
+  Serial.println(String("setting cwu_pomp_on to: ")+args[0].asInt64);
   cwu_pom_on = args[0].asInt64;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }

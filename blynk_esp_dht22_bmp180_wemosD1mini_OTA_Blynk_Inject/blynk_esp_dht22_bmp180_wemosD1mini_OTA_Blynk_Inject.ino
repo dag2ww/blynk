@@ -1,6 +1,6 @@
 #define BLYNK_TEMPLATE_ID "TMPLyiiIu_zF"
 #define BLYNK_DEVICE_NAME "Klimat Info"
-#define BLYNK_FIRMWARE_VERSION        "0.3.0"
+#define BLYNK_FIRMWARE_VERSION        "0.3.4"
 #define BLYNK_PRINT Serial
 //#define BLYNK_DEBUG
 #define APP_DEBUG
@@ -20,7 +20,7 @@
 #include <Adafruit_BMP085.h>      //http://www.instructables.com/id/Adding-the-BMP180-to-the-ESP8266/
 
 #include <CommandParser.h>
-typedef CommandParser<> MyCommandParser;
+typedef CommandParser<16, 4, 30, 32, 64> MyCommandParser;
 
 #define DHTPIN D3
 
@@ -38,6 +38,8 @@ int dhtReadErrorCount = 0;
 boolean pracaCWUSwitch = false;
 boolean pracaCWUFeedback = false;
 double temperaturaCWU = 0.0;
+
+//WidgetLED led1(V7);
 
 int ticksToRestart = 60;
 
@@ -59,8 +61,9 @@ void setup() {
     
   
   BlynkEdgent.begin();
+  
   Blynk.logEvent("started_info");
-  Blynk.logEvent("started_info", String("MAC:")+WiFi.macAddress());
+  //Blynk.logEvent("started_info", String("MAC:")+WiFi.macAddress());
   dht.begin();
 
   //SDA, SCL
@@ -96,17 +99,11 @@ void blynkPush()
   float h = dht.readHumidity();
   // Read temperature as Celsius
   float t = dht.readTemperature();
-
-  if(!macAddrReported){
-    Blynk.logEvent("started_info");
-    Blynk.logEvent("started_info", String("MAC:")+WiFi.macAddress());
-    macAddrReported = true;
-  }
   
   if (isnan(h) || isnan(t)) {
     Serial.println("Failed to read from DHT sensor!");
     if(!noDhtReported) {
-      Blynk.logEvent("no_dht_sensor"+String("MAC:")+WiFi.macAddress());
+      Blynk.logEvent("no_dht_sensor");
       noDhtReported = true;
     }
     
@@ -130,6 +127,9 @@ void blynkPush()
     Serial.println("Pressure: " + String(p));
     Blynk.virtualWrite(V3, p);
   } 
+
+  Blynk.virtualWrite(V5, temperaturaCWU);
+  Blynk.virtualWrite(V7, pracaCWUFeedback);
 
 }
 
@@ -160,38 +160,35 @@ double dewPoint(double celsius, double humidity)
   if (Serial.available()) {
     char line[128];
     size_t lineLength = Serial.readBytesUntil('\n', line, 127);
-    line[lineLength] = '\0';
-
-    char response[MyCommandParser::MAX_RESPONSE_SIZE];
-    parser.processCommand(line, response);
-    Serial.println(response);
+    if(lineLength > 0){
+      line[lineLength-1] = '\0'; //to get rid of \r sent before \n
+    } else {
+      line[lineLength] = '\0';
+    }
+    if(line[0] == '|'){
+      char response[MyCommandParser::MAX_RESPONSE_SIZE];
+      Serial.println(String("Got and will process:")+line);
+      parser.processCommand(line, response);
+      Serial.println(response);
+    }
   }
   
 }
 
 void cmd_cwu_on_feedback_process(MyCommandParser::Argument *args, char *response) {
-  Serial.print("setting cwu_pomp_on to: "); Serial.println(args[0].asInt64);
+  Serial.println(String("setting pracaCWUFeedback to: ")+args[0].asInt64);
   pracaCWUFeedback = args[0].asInt64;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
 
 void cmd_cwu_temp_process(MyCommandParser::Argument *args, char *response) {
-  Serial.print("setting cwu_pomp_on to: "); Serial.println(args[0].asDouble);
+  Serial.println(String("setting temperaturaCWU to: ")+args[0].asDouble);
   temperaturaCWU = args[0].asDouble;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
 
-BLYNK_WRITE(V5)
-{
-    Blynk.virtualWrite(V5, temperaturaCWU);
-}
 BLYNK_WRITE(V6)
 {
     pracaCWUSwitch = param.asInt();
-    Serial.print("|CMD|--CWU_ON ");
-    Serial.println(pracaCWUSwitch);
-}
-BLYNK_WRITE(V7)
-{
-    Blynk.virtualWrite(V7, pracaCWUFeedback);
+    Serial.println(String("|CMD|--CWU_ON ")+pracaCWUSwitch);
 }

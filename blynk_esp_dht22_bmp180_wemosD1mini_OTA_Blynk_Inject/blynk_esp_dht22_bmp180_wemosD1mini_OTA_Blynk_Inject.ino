@@ -131,6 +131,8 @@ void blynkPush()
   Blynk.virtualWrite(V5, temperaturaCWU);
   Blynk.virtualWrite(V7, pracaCWUFeedback);
 
+  Serial.println(String("|CMD|--CWU_ON ")+pracaCWUSwitch);
+
 }
 
 double dewPoint(double celsius, double humidity)
@@ -151,11 +153,10 @@ double dewPoint(double celsius, double humidity)
   return (241.88 * T) / (17.558 - T);
 }
   
-  void loop()
+void loop()
 {
   blynkTimer.run();
   BlynkEdgent.run();
-
   
   if (Serial.available()) {
     char line[128];
@@ -176,13 +177,13 @@ double dewPoint(double celsius, double humidity)
 }
 
 void cmd_cwu_on_feedback_process(MyCommandParser::Argument *args, char *response) {
-  Serial.println(String("setting pracaCWUFeedback to: ")+args[0].asInt64);
+  //Serial.println(String("setting pracaCWUFeedback to: ")+args[0].asInt64);
   pracaCWUFeedback = args[0].asInt64;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
 
 void cmd_cwu_temp_process(MyCommandParser::Argument *args, char *response) {
-  Serial.println(String("setting temperaturaCWU to: ")+args[0].asDouble);
+  //Serial.println(String("setting temperaturaCWU to: ")+args[0].asDouble);
   temperaturaCWU = args[0].asDouble;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
@@ -190,5 +191,4 @@ void cmd_cwu_temp_process(MyCommandParser::Argument *args, char *response) {
 BLYNK_WRITE(V6)
 {
     pracaCWUSwitch = param.asInt();
-    Serial.println(String("|CMD|--CWU_ON ")+pracaCWUSwitch);
 }

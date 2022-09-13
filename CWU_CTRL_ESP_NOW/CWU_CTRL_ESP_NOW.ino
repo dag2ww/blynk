@@ -43,6 +43,8 @@
 //uint8_t receiverAddress[] = {0x60, 0x01, 0x94, 0x1C, 0x29, 0xFD}; //D1 MINI PRO GATE CO-MOD  
 //Just broadcast
 uint8_t receiverAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}; //D1 MINI PRO GATE CO-MOD 
+bool cwu_praca_read = false;
+bool cwu_praca_write = false;
 
 struct __attribute__((packed)) sendDataPacket {
   bool cwu_pomp_is_running_feedback;
@@ -76,6 +78,7 @@ void dataReceived(uint8_t *senderMac, uint8_t *data, uint8_t dataLength) {
   
   Serial.print("cwu_pomp_on: ");
   Serial.println(packet.cwu_pomp_on);
+  cwu_praca_write = packet.cwu_pomp_on;
 }
  
 void setup() {
@@ -110,8 +113,9 @@ void setup() {
 void loop() {
   sendDataPacket packet;
   //TODO read pomp pin and temp stats
-  packet.cwu_pomp_is_running_feedback = true;
-  packet.cwu_temperature = 6.28;
+  cwu_praca_read = cwu_praca_write;
+  packet.cwu_pomp_is_running_feedback = cwu_praca_read;
+  packet.cwu_temperature = 7.28;
 
   esp_now_send(receiverAddress, (uint8_t *) &packet, sizeof(packet));
 

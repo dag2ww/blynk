@@ -60,9 +60,9 @@ struct __attribute__((packed)) sendDataPacket {
 
 void transmissionComplete(uint8_t *receiver_mac, uint8_t transmissionStatus) {
   if(transmissionStatus == 0) {
-    Serial.println("Data to SENSOR(s) sent successfully");
+    //Serial.println("Data to SENSOR(s) sent successfully");
   } else {
-    Serial.println(String("Sending data to SENSOR(s) failed with error code: ")+transmissionStatus);
+    //Serial.println(String("Sending data to SENSOR(s) failed with error code: ")+transmissionStatus);
   }
 }
 
@@ -127,9 +127,9 @@ void loop() {
     }
     if(line[0] == '|'){
       char response[MyCommandParser::MAX_RESPONSE_SIZE];
-      Serial.println(String("Got and will process:")+line);
+      //Serial.println(String("Got and will process:")+line);
       parser.processCommand(line, response);
-      Serial.println(response);
+      //Serial.println(response);
     }
   }
 
@@ -141,7 +141,7 @@ void loop() {
 }
 
 void cmd_cwu_on_process(MyCommandParser::Argument *args, char *response) {
-  Serial.println(String("setting cwu_pomp_on to: ")+args[0].asInt64);
+  //Serial.println(String("setting cwu_pomp_on to: ")+args[0].asInt64);
   cwu_pom_on = args[0].asInt64;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }

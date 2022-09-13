@@ -1,7 +1,7 @@
 #define BLYNK_TEMPLATE_ID "TMPLyiiIu_zF"
 #define BLYNK_DEVICE_NAME "Klimat Info"
-#define BLYNK_FIRMWARE_VERSION        "0.3.4"
-#define BLYNK_PRINT Serial
+#define BLYNK_FIRMWARE_VERSION        "0.3.5"
+#define BLYNK_PRINT Serial1
 //#define BLYNK_DEBUG
 #define APP_DEBUG
 
@@ -10,6 +10,8 @@
 #define USE_WEMOS_D1_MINI
 
 #include "BlynkEdgent.h"
+
+#include<ESP8266WiFi.h>
 
 #include <ArduinoJson.h>          //https://github.com/bblanchon/ArduinoJson
 
@@ -119,12 +121,12 @@ void blynkPush()
     double dp = dewPoint(t,h);
     Blynk.virtualWrite(V4, dp); 
     dhtReadErrorCount = 0;  
-    Serial.println("Temp: "+String(t)+" Humidity: "+String(h)+".");
+    //Serial.println("Temp: "+String(t)+" Humidity: "+String(h)+".");
   }
 
   if(bmpPresent) {
     float p = bmp.readPressure()/100;
-    Serial.println("Pressure: " + String(p));
+    //Serial.println("Pressure: " + String(p));
     Blynk.virtualWrite(V3, p);
   } 
 
@@ -168,9 +170,9 @@ void loop()
     }
     if(line[0] == '|'){
       char response[MyCommandParser::MAX_RESPONSE_SIZE];
-      Serial.println(String("Got and will process:")+line);
+      //Serial.println(String("Got and will process:")+line);
       parser.processCommand(line, response);
-      Serial.println(response);
+      //Serial.println(response);
     }
   }
   

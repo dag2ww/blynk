@@ -26,8 +26,8 @@
  *  SSL Support: "All SSL ciphers (most compatible)"
  *  COM Port: Depends *On Your System*
  *********************************************************************************************************************/
-#include<ESP8266WiFi.h>
-#include<espnow.h>
+#include <ESP8266WiFi.h>
+#include <espnow.h>
 #include <CommandParser.h>
 
 #define MY_ROLE         ESP_NOW_ROLE_COMBO              // set the role of this device: CONTROLLER, SLAVE, COMBO
@@ -117,6 +117,8 @@ void setup() {
 void loop() {
   sendDataPacket packet;  
 
+  while(Serial.available() && (Serial.peek() != '|')) Serial.read();
+
   if (Serial.available()) {
     char line[128];
     size_t lineLength = Serial.readBytesUntil('\n', line, 127);
@@ -137,7 +139,7 @@ void loop() {
 
   esp_now_send(receiverAddress, (uint8_t *) &packet, sizeof(packet));
 
-  delay(1000);
+  delay(500);
 }
 
 void cmd_cwu_on_process(MyCommandParser::Argument *args, char *response) {

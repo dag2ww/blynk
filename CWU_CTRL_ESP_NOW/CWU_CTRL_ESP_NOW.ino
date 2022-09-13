@@ -119,5 +119,5 @@ void loop() {
 
   esp_now_send(receiverAddress, (uint8_t *) &packet, sizeof(packet));
 
-  delay(1000);
+  delay(500);
 }

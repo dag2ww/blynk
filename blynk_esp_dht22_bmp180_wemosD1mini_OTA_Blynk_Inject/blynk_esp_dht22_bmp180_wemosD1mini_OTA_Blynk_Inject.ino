@@ -1,6 +1,6 @@
 #define BLYNK_TEMPLATE_ID "TMPLyiiIu_zF"
 #define BLYNK_DEVICE_NAME "Klimat Info"
-#define BLYNK_FIRMWARE_VERSION        "0.3.6"
+#define BLYNK_FIRMWARE_VERSION        "0.3.10"
 #define BLYNK_PRINT Serial1
 //#define BLYNK_DEBUG
 #define APP_DEBUG
@@ -23,15 +23,13 @@
 
 #include <CommandParser.h>
 typedef CommandParser<16, 4, 30, 32, 64> MyCommandParser;
+MyCommandParser parser;
 
 #define DHTPIN D3
-
 #define DHTTYPE DHT22   // DHT 22  (AM2302)
-
 DHT dht(DHTPIN, DHTTYPE);
-Adafruit_BMP085 bmp;
 
-MyCommandParser parser;
+Adafruit_BMP085 bmp;
 
 boolean bmpPresent = false;
 boolean noDhtReported = false;
@@ -41,18 +39,15 @@ boolean pracaCWUSwitch = false;
 boolean pracaCWUFeedback = false;
 double temperaturaCWU = 0.0;
 
-//WidgetLED led1(V7);
+int ticksToRestart = 120;
 
-int ticksToRestart = 60;
-
-BlynkTimer blynkTimer; // Create a Timer object called "timer"! 
-
+BlynkTimer blynkTimer; 
 
 void setup() {
   delay(3000);
   // put your setup code here, to run once:
   Serial.begin(115200);
-  Serial1.begin(115200);
+  //Serial1.begin(115200);
   
   Serial.println();
   Serial.println("Starting...");    //read configuration from FS json
@@ -64,6 +59,7 @@ void setup() {
   parser.registerCommand("|CMD|--CWU_TEMPERATURE", "d", &cmd_cwu_temp_process);
   
   BlynkEdgent.begin();
+  
   Blynk.logEvent("started");
   
   dht.begin();
@@ -81,7 +77,6 @@ void setup() {
   blynkTimer.setInterval(1500L, blynkPush);
 }
 
-//// This function will run every time Blynk connection is established
 void BlynkOnConnected() {
     ticksToRestart = 120;
     // Request Blynk server to re-send latest values for all pins
@@ -102,7 +97,7 @@ void blynkPush()
   float t = dht.readTemperature();
   
   if (isnan(h) || isnan(t)) {
-    Serial1.println("Failed to read from DHT sensor!");
+    //Serial1.println("Failed to read from DHT sensor!");
     if(!noDhtReported) {
       Blynk.logEvent("no_dht_sensor");
       noDhtReported = true;
@@ -118,12 +113,12 @@ void blynkPush()
     Blynk.virtualWrite(V2, h); 
     Blynk.virtualWrite(V4, dewPoint(t,h)); 
     dhtReadErrorCount = 0;  
-    Serial1.println("Temp: "+String(t)+" Humidity: "+String(h)+".");
+    //Serial1.println("Temp: "+String(t)+" Humidity: "+String(h)+".");
   }
 
   if(bmpPresent) {
     float p = bmp.readPressure()/100;
-    Serial1.println("Pressure: " + String(p));
+    //Serial1.println("Pressure: " + String(p));
     Blynk.virtualWrite(V3, p);
   } 
 
@@ -154,8 +149,10 @@ void loop()
 {
   blynkTimer.run();
   BlynkEdgent.run();
+
+  while(Serial.available() && (Serial.peek() != '|')) Serial.read();
   
-  if (Serial.available()) {
+  if (Serial.available() && Serial.peek() == '|') {
     char line[128];
     size_t lineLength = Serial.readBytesUntil('\n', line, 127);
     if(lineLength > 0){
@@ -165,22 +162,22 @@ void loop()
     }
     if(line[0] == '|'){
       char response[MyCommandParser::MAX_RESPONSE_SIZE];
-      Serial1.println(String("Got and will process:")+line);
+      //Serial1.println(String("Got and will process:")+line);
       parser.processCommand(line, response);
-      Serial1.println(response);
+      //Serial1.println(response);
     }
   }
   
 }
 
 void cmd_cwu_on_feedback_process(MyCommandParser::Argument *args, char *response) {
-  Serial1.println(String("setting pracaCWUFeedback to: ")+args[0].asInt64);
+  //Serial1.println(String("setting pracaCWUFeedback to: ")+args[0].asInt64);
   pracaCWUFeedback = args[0].asInt64;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }
 
 void cmd_cwu_temp_process(MyCommandParser::Argument *args, char *response) {
-  Serial1.println(String("setting temperaturaCWU to: ")+args[0].asDouble);
+  //Serial1.println(String("setting temperaturaCWU to: ")+args[0].asDouble);
   temperaturaCWU = args[0].asDouble;
   strlcpy(response, "success", MyCommandParser::MAX_RESPONSE_SIZE);
 }

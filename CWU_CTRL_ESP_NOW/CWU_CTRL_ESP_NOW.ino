@@ -29,6 +29,20 @@
 #include<ESP8266WiFi.h>
 #include<espnow.h>
 
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+
+#define ONE_WIRE_BUS D6
+#define CWU_PRACA_STATE_READ D8 // needs to be physically pulled high
+#define CWU_PRACA_WRITE D0
+
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature. 
+DallasTemperature ds12b(&oneWire);
+
 #define MY_ROLE         ESP_NOW_ROLE_COMBO              // set the role of this device: CONTROLLER, SLAVE, COMBO
 #define RECEIVER_ROLE   ESP_NOW_ROLE_COMBO              // set the role of the receiver
 #define WIFI_CHANNEL    1
@@ -90,10 +104,16 @@ void setup() {
   Serial.println("MAC ADDRESS:");
   Serial.println(WiFi.macAddress());
   Serial.println();
-    
+  
+  pinMode(CWU_PRACA_STATE_READ, INPUT);
+  pinMode(CWU_PRACA_WRITE, OUTPUT);
+  digitalWrite(CWU_PRACA_WRITE, HIGH);
+  
   Serial.print(MY_NAME);
   Serial.println("...initializing...");
 
+  ds12b.begin();
+  
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();        // we do not want to connect to a WiFi network
 
@@ -111,13 +131,21 @@ void setup() {
 }
 
 void loop() {
+  ds12b.requestTemperatures();
+  
   sendDataPacket packet;
-  //TODO read pomp pin and temp stats
-  cwu_praca_read = cwu_praca_write;
-  packet.cwu_pomp_is_running_feedback = cwu_praca_read;
-  packet.cwu_temperature = 7.28;
+
+  Serial.println(String("Writing CWU praca:")+cwu_praca_write);
+  digitalWrite(CWU_PRACA_WRITE,!cwu_praca_write);
+
+  packet.cwu_pomp_is_running_feedback = digitalRead(CWU_PRACA_STATE_READ);
+  Serial.println(String("Got CWU praca state read:")+packet.cwu_pomp_is_running_feedback);
+  
+  packet.cwu_temperature = ds12b.getTempCByIndex(0);
+  Serial.println(String("Got temperature read:")+packet.cwu_temperature);
 
   esp_now_send(receiverAddress, (uint8_t *) &packet, sizeof(packet));
 
-  delay(500);
+  delay(200);
+
 }

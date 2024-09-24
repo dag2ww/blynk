@@ -110,7 +110,8 @@ Keypad keypad( makeKeymap(keys), rowPins, colPins, ROWS, COLS); //initialize an 
 
 
 void setup() {
-
+  Serial.begin(9600);
+  Serial.println("start");
   pinMode(TONE_PIN, OUTPUT);
   keypad.addEventListener(keypadEvent);
    
@@ -132,11 +133,12 @@ void setup() {
   radio.openReadingPipe(1,InfoToPowerStationPipes[1]);
   
   radio.startListening();
-  //radio.printDetails();
+  radio.printDetails();
+    Serial.println("start1");
 }
 
 void loop() {
-  handleSendReceiveRF24();
+  //handleSendReceiveRF24();
   handleUserButton();
   //if no message from radio since 1 minute - allow reset
   //if(millis() - lastAnyRadioResponse < 60000){
@@ -213,18 +215,20 @@ void handleUserButton(){
   receivedRequest = false;
 
   customKey = keypad.getKey();
-  
+  Serial.println(customKey);
   if (customKey) // makes sure a key is actually pressed, equal to (customKey != NO_KEY)
   {
     Data[data_count] = customKey; // store char into data array
     data_count++; // increment data array by 1 to store new char, also keep track of the number of chars entered
   }
 
+  delay(100);
 }
 
 // Taking care of some special events.
 void keypadEvent(KeypadEvent key){
     tone(TONE_PIN, 1000, 100); //pin, freq, duration
+    Serial.println("event");
     switch (keypad.getState()){
     case PRESSED:
         if (key == '#') {
